@@ -2,11 +2,35 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import random
+import copy
+
+SlotList = ["Bacardi Carta Blanca", "Tanquerey", "Bacardi Carta Oro", "Tanquerey LE", "2Bacardi Carta Blanca",
+           "2Tanquerey", "2Bacardi Carta Oro", "2Tanquerey LE", "3Bacardi Carta Blanca", "3Tanquerey", "3Bacardi Carta Oro",
+           "3Tanquerey LE"]
+
+def checkItems(SKU=None, Orders=None):
+    for ord in Orders:
+        for ordi in ord[1]:
+            if ordi not in SKU:
+                print(f"ordi={ordi}")
+                return False
+    return True
 
 def sendBatch(batchedOrder, mainBatchList):
 
     mainBatchList.append(batchedOrder)
     return mainBatchList
+
+def getAisleList(SKULIST, slottinglist, num_aisles_per_alane):
+    aislenum = []
+    for skusku in SKULIST:
+        for slotted in range(len(slottinglist)):
+            if skusku == slottinglist[slotted]:
+                aislenum.append(slotted//num_aisles_per_alane)
+                break
+    assert len(SKULIST)==len(aislenum), "getaislelist: lists don't hav the same length"
+    return aislenum
+
 
 def BPA(ArrivedOrder):
     BTypeList = ["BT1",  "BT2"]
@@ -14,6 +38,37 @@ def BPA(ArrivedOrder):
         return BTypeList[1]
     else:
         return BTypeList[0]
+
+def CalcMaxMetric(BTOrders = None, thresh = 2, BoxTypeSegregation = 0, slotting_list=None, n_a_p_al=None):
+    LolMetricPairs = []
+
+    for oiter, oo in enumerate(BTOrders):
+        for oio in range(oiter + 1, len(BTOrders)):
+
+            commonpicklines = len(list(set(oo[1]).intersection(BTOrders[oio][1])))
+
+            Alist1 = getAisleList(list(set(oo[1])), slottinglist=slotting_list, num_aisles_per_alane=n_a_p_al)
+            Alist2 = getAisleList(list(set(BTOrders[oio][1])), slottinglist=slotting_list, num_aisles_per_alane=n_a_p_al)
+
+            noncommonaisles = len(Alist1) + len(Alist2) - 2 * len(list(set(Alist1).intersection(set(Alist2))))
+
+            metric_o = commonpicklines - noncommonaisles
+
+            LolMetricPairs.append([oiter, oio, metric_o])
+
+    maxmetricpairs, chosen_index = 0, -1
+
+    for lmp_iji in range(len(LolMetricPairs)):
+        if LolMetricPairs[lmp_iji][2] > maxmetricpairs:
+            maxmetricpairs = LolMetricPairs[lmp_iji][2]
+            chosen_index = lmp_iji
+
+    if maxmetricpairs < thresh:
+        print(f"No more sub-batching can be performed on this batch (of BoxType {BoxTypeSegregation}) as maximum shared picklines in batch ({maxmetricpairs}) doesn't reach the threshold ({thresh})")
+        return "NOBATCH"
+
+    return chosen_index, maxmetricpairs, LolMetricPairs, LolMetricPairs[chosen_index][0], LolMetricPairs[chosen_index][1]
+
 
 def CalcMaxPicklines(BTOrders = None, thresh = 2, BoxTypeSegregation = 0):
 
@@ -36,7 +91,7 @@ def CalcMaxPicklines(BTOrders = None, thresh = 2, BoxTypeSegregation = 0):
 
     return chosen_index, maxpicklineval, LolCommonPicklines, LolCommonPicklines[chosen_index][0], LolCommonPicklines[chosen_index][1]
 
-def makeBatches(display=0, Orders= None, SKU=None, threshold = 2, minCartThreshold=100):
+def makeBatches(display=0, Orders= None, SKU=None, threshold = 2, minCartThreshold=100, num_aisles_per_alane=None):
 
     BT1List, BT2List = [], []
     Batches = []
@@ -55,7 +110,7 @@ def makeBatches(display=0, Orders= None, SKU=None, threshold = 2, minCartThresho
             print(f"{BPA(od)}: No such type of box exists")
             # raise ValueError
 
-    print(f"BT1: {BT1List}; \n BT2: {BT2List}\n")
+    print(f"\nBT1: {BT1List}; \n BT2: {BT2List}\n")
 
     # LoLCommonPicklinesBT1, LoLCommonPicklinesBT2 = [], []
     #
@@ -97,38 +152,41 @@ def makeBatches(display=0, Orders= None, SKU=None, threshold = 2, minCartThresho
 
         FLAGVAR = 0
 
-        if CalcMaxPicklines(BT1List, thresh=threshold, BoxTypeSegregation=1) == "NOBATCH":
+        if CalcMaxMetric(BT1List, thresh=threshold, BoxTypeSegregation=1, slotting_list=SKU, n_a_p_al=num_aisles_per_alane) == "NOBATCH":
+        # if CalcMaxPicklines(BT1List, thresh=threshold, BoxTypeSegregation=1) == "NOBATCH":
             print("we be here vibin'.")
             # print("\n")
             FLAGVAR = 2
 
-            if CalcMaxPicklines(BT2List, thresh=threshold, BoxTypeSegregation=2) == "NOBATCH":
+            if CalcMaxMetric(BT2List, thresh=threshold, BoxTypeSegregation=2, slotting_list=SKU, n_a_p_al=num_aisles_per_alane) == "NOBATCH":
+            # if CalcMaxPicklines(BT2List, thresh=threshold, BoxTypeSegregation=2) == "NOBATCH":
 
                 print("max vibes, exit. fin.")
                 # print("\n")
                 FLAGVAR = 5
 
         else:
-            ci1, mpl1, llcpl1, cci1, ccci1 = CalcMaxPicklines(BT1List, thresh=threshold, BoxTypeSegregation=1)
-            print(f"MaxPicklineData for BT1: {llcpl1[ci1]}")
+            # ci1, mpl1, llcpl1, cci1, ccci1 = CalcMaxPicklines(BT1List, thresh=threshold, BoxTypeSegregation=1)
+            etricci1, etricmpl1, etricllcpl1, etriccci1, etricccci1 = CalcMaxMetric(BT1List, thresh=threshold, BoxTypeSegregation=1, slotting_list=SKU, n_a_p_al=num_aisles_per_alane)
+            print(f"MaxMetricData for BT1: {etricllcpl1[etricci1]}")
 
             Temp1List, TempProductList = [], []
 
-            for prod in BT1List[cci1][1]:
+            for prod in BT1List[etriccci1][1]:
                 TempProductList.append(prod)
-            for produ in BT1List[ccci1][1]:
+            for produ in BT1List[etricccci1][1]:
                 TempProductList.append(produ)
 
-            totOrders = BT1List[cci1][2] + BT1List[ccci1][2]
+            totOrders = BT1List[etriccci1][2] + BT1List[etricccci1][2]
 
             TempProductList = list(set(TempProductList))
 
             # Add num order in batch
 
-            first_order = llcpl1[ci1][0]
-            second_order = llcpl1[ci1][1]
+            first_order = etricllcpl1[etricci1][0]
+            second_order = etricllcpl1[etricci1][1]
 
-            tempfirstorderstore = BT1List[first_order]
+            tempfirstorderstore = copy.deepcopy(BT1List[first_order])
 
             # BT1List[first_order][0].append(BT1List[second_order][0])
             for eletempp in BT1List[second_order][0]:
@@ -146,28 +204,29 @@ def makeBatches(display=0, Orders= None, SKU=None, threshold = 2, minCartThresho
 
             print(f"Removed: {tempfirstorderstore} | {popped12}\n")
 
-        if CalcMaxPicklines(BT2List, thresh=threshold, BoxTypeSegregation=2) != "NOBATCH":
+        if CalcMaxMetric(BT2List, thresh=threshold, BoxTypeSegregation=2, slotting_list=SKU, n_a_p_al=num_aisles_per_alane) != "NOBATCH":
 
-            ci2, mpl2, llcpl2, cci2, ccci2 = CalcMaxPicklines(BT2List, thresh=threshold, BoxTypeSegregation=2)
-            print(f"MaxPicklineData for BT2: {llcpl2[ci2]}")
+            etricci2, etricmpl2, etricllcpl2, etriccci2, etricccci2 = CalcMaxMetric(BT2List, thresh=threshold, BoxTypeSegregation=2, slotting_list=SKU, n_a_p_al=num_aisles_per_alane)
+            # ci2, mpl2, llcpl2, cci2, ccci2 = CalcMaxPicklines(BT2List, thresh=threshold, BoxTypeSegregation=2)
+            print(f"MaxPicklineData for BT2: {etricllcpl2[etricci2]}")
 
             Temp1List, TempProductList = [], []
 
-            for prod2 in BT2List[cci2][1]:
+            for prod2 in BT2List[etriccci2][1]:
                 TempProductList.append(prod2)
-            for produ2 in BT2List[ccci2][1]:
+            for produ2 in BT2List[etricccci2][1]:
                 TempProductList.append(produ2)
 
-            totOrders = BT2List[cci2][2] + BT2List[ccci2][2]
+            totOrders = BT2List[etriccci2][2] + BT2List[etricccci2][2]
 
             TempProductList = list(set(TempProductList))
 
             # Add num order in batch
 
-            first_order = llcpl2[ci2][0]
-            second_order = llcpl2[ci2][1]
+            first_order = etricllcpl2[etricci2][0]
+            second_order = etricllcpl2[etricci2][1]
 
-            tempfirstorderstore = BT2List[first_order]
+            tempfirstorderstore = copy.deepcopy(BT2List[first_order])
             print(tempfirstorderstore)
 
             # BT2List[first_order][0].append(BT2List[second_order][0])
@@ -183,7 +242,7 @@ def makeBatches(display=0, Orders= None, SKU=None, threshold = 2, minCartThresho
             # BT2List.append(merged_order2)  # Change first parameter to better reflect both the SKU IDs which were batched
 
             # popped21 = BT2List.pop(llcpl2[ci2][0])  # Check if pop index correct and llcpl index works / gets index to be popped from BTList of maxpicklines
-            popped22 = BT2List.pop(llcpl2[ci2][1])  # Check if pop index correct and llcpl index works
+            popped22 = BT2List.pop(second_order)  # Check if pop index correct and llcpl index works
 
             print(f"Removed: {tempfirstorderstore} | {popped22}")
 

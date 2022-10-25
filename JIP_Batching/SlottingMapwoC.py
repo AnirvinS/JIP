@@ -111,3 +111,5 @@ def makeSlotMap(map_save=0, display=0, SKU=None, num_aisles=0, num_shelves=0, nu
 
         with open(SlotMapFileName, 'w') as f:
             f.writelines(shelf_list)
+
+    return num_ais_per_ais_lane
