@@ -89,8 +89,11 @@ def makeSlotMap(map_save=0, display=0, SKU=None, num_aisles=0, num_shelves=0, nu
 
             for itl2 in range(num_ais_per_ais_lane):
 
+                if itl2 == 0:
+                    print(f"|{itl1*(num_ais_per_ais_lane)+1}|", end="")
+
                 if itl2 != 0:
-                    print("    ", end="")
+                    print(f"   |{(itl1*(num_ais_per_ais_lane)+1)+itl2}|", end="")
 
                 for itl3 in range(num_shelves):
                     # major_iter = (itl1*itl2) + itl3
@@ -98,6 +101,8 @@ def makeSlotMap(map_save=0, display=0, SKU=None, num_aisles=0, num_shelves=0, nu
                     print(f" [{shelf_list[iteri]:^30}] ", end="")
                     iteri+=1
                     # print(f' [{SKU[major_iter]}] ')
+
+                print("|", end="")
 
         print("\n")
 

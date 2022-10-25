@@ -10,7 +10,10 @@ def sendBatch(batchedOrder, mainBatchList):
 
 def BPA(ArrivedOrder):
     BTypeList = ["BT1",  "BT2"]
-    return random.choice(BTypeList)
+    if len(ArrivedOrder[1]) > 2:
+        return BTypeList[1]
+    else:
+        return BTypeList[0]
 
 def CalcMaxPicklines(BTOrders = None, thresh = 2, BoxTypeSegregation = 0):
 
@@ -48,9 +51,11 @@ def makeBatches(display=0, Orders= None, SKU=None, threshold = 2, minCartThresho
         elif BPA(od) == "BT2":
             BT2List.append(od)
             print(f"{od} added to BT2")
-        else:
+        elif BPA(od) != "BT1" and BPA(od) != "BT2":
             print(f"{BPA(od)}: No such type of box exists")
-            raise ValueError
+            # raise ValueError
+
+    print(f"BT1: {BT1List}; \n BT2: {BT2List}\n")
 
     # LoLCommonPicklinesBT1, LoLCommonPicklinesBT2 = [], []
     #
@@ -94,11 +99,13 @@ def makeBatches(display=0, Orders= None, SKU=None, threshold = 2, minCartThresho
 
         if CalcMaxPicklines(BT1List, thresh=threshold, BoxTypeSegregation=1) == "NOBATCH":
             print("we be here vibin'.")
+            # print("\n")
             FLAGVAR = 2
 
             if CalcMaxPicklines(BT2List, thresh=threshold, BoxTypeSegregation=2) == "NOBATCH":
 
                 print("max vibes, exit. fin.")
+                # print("\n")
                 FLAGVAR = 5
 
         else:
@@ -118,13 +125,26 @@ def makeBatches(display=0, Orders= None, SKU=None, threshold = 2, minCartThresho
 
             # Add num order in batch
 
-            merged_order1 = [llcpl1[ci1][0], TempProductList, totOrders]
-            BT1List.append(merged_order1) #Change first parameter to better reflect both the SKU IDs which were batched
+            first_order = llcpl1[ci1][0]
+            second_order = llcpl1[ci1][1]
 
-            popped11 = BT1List.pop(llcpl1[ci1][0]) #Check if pop index correct and llcpl index works / gets index to be popped from BTList of maxpicklines
-            popped12 = BT1List.pop(llcpl1[ci1][1]) #Check if pop index correct and llcpl index works
+            tempfirstorderstore = BT1List[first_order]
 
-            print(f"Added: {merged_order1}\nRemoved: {popped11} | {popped12}\n")
+            # BT1List[first_order][0].append(BT1List[second_order][0])
+            for eletempp in BT1List[second_order][0]:
+                BT1List[first_order][0].append(eletempp)
+            BT1List[first_order][1] = TempProductList
+            BT1List[first_order][2] = totOrders
+
+            print(f"Order sub-batched in BT1: {BT1List[first_order]}")
+
+            # merged_order1 = [llcpl1[ci1][0], TempProductList, totOrders]
+            # BT1List.append(merged_order1) #Change first parameter to better reflect both the SKU IDs which were batched
+
+            # popped11 = BT1List.pop(first_order) #Check if pop index correct and llcpl index works / gets index to be popped from BTList of maxpicklines
+            popped12 = BT1List.pop(second_order) #Check if pop index correct and llcpl index works
+
+            print(f"Removed: {tempfirstorderstore} | {popped12}\n")
 
         if CalcMaxPicklines(BT2List, thresh=threshold, BoxTypeSegregation=2) != "NOBATCH":
 
@@ -144,14 +164,28 @@ def makeBatches(display=0, Orders= None, SKU=None, threshold = 2, minCartThresho
 
             # Add num order in batch
 
-            merged_order2 = [llcpl2[ci2][0], TempProductList, totOrders] # Change first parameter to better reflect both the SKU IDs which were batched
+            first_order = llcpl2[ci2][0]
+            second_order = llcpl2[ci2][1]
 
-            BT2List.append(merged_order2)  # Change first parameter to better reflect both the SKU IDs which were batched
+            tempfirstorderstore = BT2List[first_order]
+            print(tempfirstorderstore)
 
-            popped21 = BT2List.pop(llcpl2[ci2][0])  # Check if pop index correct and llcpl index works / gets index to be popped from BTList of maxpicklines
+            # BT2List[first_order][0].append(BT2List[second_order][0])
+            for eletemp in BT2List[second_order][0]:
+                BT2List[first_order][0].append(eletemp)
+            BT2List[first_order][1] = TempProductList
+            BT2List[first_order][2] = totOrders
+
+            print(f"Order sub-batched in BT2: {BT2List[first_order]}")
+
+            # merged_order2 = [llcpl2[ci2][0], TempProductList, totOrders] # Change first parameter to better reflect both the SKU IDs which were batched
+
+            # BT2List.append(merged_order2)  # Change first parameter to better reflect both the SKU IDs which were batched
+
+            # popped21 = BT2List.pop(llcpl2[ci2][0])  # Check if pop index correct and llcpl index works / gets index to be popped from BTList of maxpicklines
             popped22 = BT2List.pop(llcpl2[ci2][1])  # Check if pop index correct and llcpl index works
 
-            print(f"Added: {merged_order2}\nRemoved: {popped21} | {popped22}")
+            print(f"Removed: {tempfirstorderstore} | {popped22}")
 
     return mainBatchList
 
