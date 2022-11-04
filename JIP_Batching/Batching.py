@@ -60,9 +60,10 @@ def BPA(ArrivedOrder):
     else:
         return BTypeList[0]
 
+#ADD NC, NP, NS for aislelist
 def CalcMaxMetric(BTOrders = None, BoxTypeSegregation = 0, slotting_list=None, n_a_p_al=None, minCartThreshold=None):
 
-
+    nal, na, nc, ns, np = 10, 20, 12, 5, 3
     tempBTList = copy.deepcopy(BTOrders)
     maxmetricpairs, chosen_index, maxmetriclist, lo_indices = 0, -1, [], []
 
@@ -70,7 +71,7 @@ def CalcMaxMetric(BTOrders = None, BoxTypeSegregation = 0, slotting_list=None, n
 
     if len(BTOrders) < minCartThreshold:
         print(f"HERE No more sub-batching can be performed on this batch (of BoxType {BoxTypeSegregation}) as batched orders ({len(BTOrders)}) doesn't reach the cart threshold ({minCartThreshold})")
-        return "NOBATCH"
+        return "NOBATCH", "NOBATCH", "NOBATCH", "NOBATCH", "NOBATCH"
 
     for mainloopiter in range(minCartThreshold-1):
 
@@ -83,8 +84,8 @@ def CalcMaxMetric(BTOrders = None, BoxTypeSegregation = 0, slotting_list=None, n
 
                     commonpicklines = len(list(set(oo[1]).intersection(tempBTList[oio][1])))
 
-                    Alist1 = getAisleList(SKULIST=list(set(oo[1])), slottinglist=slotting_list, num_c=2, num_s=2, num_p=2, mode=2, num_aisles_per_alane=n_a_p_al)
-                    Alist2 = getAisleList(SKULIST=list(set(tempBTList[oio][1])), slottinglist=slotting_list, num_c=2, num_s=2, num_p=2, mode=2, num_aisles_per_alane=n_a_p_al)
+                    Alist1 = getAisleList(SKULIST=list(set(oo[1])), slottinglist=slotting_list, num_c=nc, num_s=ns, num_p=np, mode=2, num_aisles_per_alane=n_a_p_al)
+                    Alist2 = getAisleList(SKULIST=list(set(tempBTList[oio][1])), slottinglist=slotting_list, num_c=nc, num_s=ns, num_p=np, mode=2, num_aisles_per_alane=n_a_p_al)
 
                     # Alist2 = getAisleList(list(set(tempBTList[oio][1])), slottinglist=slotting_list, num_aisles_per_alane=n_a_p_al)
 
@@ -119,8 +120,8 @@ def CalcMaxMetric(BTOrders = None, BoxTypeSegregation = 0, slotting_list=None, n
 
                     commonpicklines = len(list(set(tempBTList[imp_index][1]).intersection(tempBTList[oioyo][1])))
 
-                    Alist1 = getAisleList(SKULIST=list(set(tempBTList[imp_index][1])), slottinglist=slotting_list, num_c=2, num_s=2, num_p=2, mode=2, num_aisles_per_alane=n_a_p_al)
-                    Alist2 = getAisleList(SKULIST=list(set(tempBTList[oioyo][1])), slottinglist=slotting_list, num_c=2, num_s=2, num_p=2, mode=2, num_aisles_per_alane=n_a_p_al)
+                    Alist1 = getAisleList(SKULIST=list(set(tempBTList[imp_index][1])), slottinglist=slotting_list, num_c=nc, num_s=ns, num_p=np, mode=2, num_aisles_per_alane=n_a_p_al)
+                    Alist2 = getAisleList(SKULIST=list(set(tempBTList[oioyo][1])), slottinglist=slotting_list, num_c=nc, num_s=ns, num_p=np, mode=2, num_aisles_per_alane=n_a_p_al)
 
                     # Alist1 = getAisleList(list(set(tempBTList[imp_index][1])), slottinglist=slotting_list, num_aisles_per_alane=n_a_p_al)
                     # Alist2 = getAisleList(list(set(tempBTList[oioyo][1])), slottinglist=slotting_list, num_aisles_per_alane=n_a_p_al)
@@ -133,7 +134,7 @@ def CalcMaxMetric(BTOrders = None, BoxTypeSegregation = 0, slotting_list=None, n
 
         checkLollist = []
         checkLollist = copy.deepcopy(LolMetricPairs)
-        print(f"\n\n{checkLollist}\n\n")
+        # print(f"\n\n{checkLollist}\n\n")
         maxmetricpairs = -800
 
         for lmmiji in range(len(checkLollist)):
@@ -163,7 +164,7 @@ def CalcMaxMetric(BTOrders = None, BoxTypeSegregation = 0, slotting_list=None, n
         tempBTList[first_order_index][1] = copy.deepcopy(temp_prod_list)           # CHECK DEEPCOPY AND COPY HERE
         tempBTList[first_order_index][2] = totOrdersBatched         # adding to batched index
 
-        print(f"Adding {tempBTList[second_order_index]} to the \nbatch: {tempBTList[first_order_index]}\n")
+        # print(f"Adding {tempBTList[second_order_index]} to the \nbatch: {tempBTList[first_order_index]}\n")
 
         print(f"mliMLI: {mainloopiter}")
 
@@ -196,7 +197,7 @@ def CalcMaxMetric(BTOrders = None, BoxTypeSegregation = 0, slotting_list=None, n
 
     if tempBTList[imp_index][2] != minCartThreshold:
         print(f"No more sub-batching can be performed on this batch (of BoxType {BoxTypeSegregation}) as batched orders ({tempBTList[imp_index]}) doesn't reach the cart threshold ({minCartThreshold})")
-        return "NOBATCH"
+        return "NOBATCH", "NOBATCH", "NOBATCH", "NOBATCH", "NOBATCH"
 
     return tempBTList[imp_index][0], maxmetriclist, tempBTList[imp_index][1], tempBTList[imp_index][2], tempBTList[imp_index]
 
@@ -222,7 +223,7 @@ def CalcMaxMetric(BTOrders = None, BoxTypeSegregation = 0, slotting_list=None, n
 #
 #     return chosen_index, maxpicklineval, LolCommonPicklines, LolCommonPicklines[chosen_index][0], LolCommonPicklines[chosen_index][1]
 
-def makeBatches(display=0, Orders= None, SKU=None, minCartThreshold=100, num_aisles_per_alane=None, box_type_batching = None):
+def makeBatches(display=0, Orders= None, SKU=None, minCartThreshold=100, num_aisles_per_alane=None, box_type_batching = None, FIFOBTYPE = False):
 
     BT1List, BT2List, BT3List = [], [], []
     Batches = []
@@ -244,7 +245,7 @@ def makeBatches(display=0, Orders= None, SKU=None, minCartThreshold=100, num_ais
             print(f"{BPA(od)}: No such type of box exists")
             # raise ValueError
 
-    print(f"\nBT1: {BT1List}; \n BT2: {BT2List};\n BT3: {BT3List}")
+    # print(f"\nBT1: {BT1List}; \n BT2: {BT2List};\n BT3: {BT3List}")
 
     if box_type_batching is None:
         box_type_batching = random.choice([1, 2, 3])
@@ -260,13 +261,49 @@ def makeBatches(display=0, Orders= None, SKU=None, minCartThreshold=100, num_ais
 
     assert bt_whaa in [BT1List, BT2List, BT3List], f"invalid choice for BType: {bt_whaa}"
 
-    if CalcMaxMetric(bt_whaa, BoxTypeSegregation=box_type_batching, slotting_list=SKU, n_a_p_al=num_aisles_per_alane, minCartThreshold=minCartThreshold) != "NOBATCH":
+    if FIFOBTYPE:
+        if len(bt_whaa)<minCartThreshold:
+            print(f"only {len(bt_whaa)} items exist in {box_type_batching}")
+        random.shuffle(bt_whaa)
+        fbt_bt_whaa = copy.deepcopy(bt_whaa)
+        for fifooiter in range(1, minCartThreshold):
+            # for calculating picklines
+            if fbt_bt_whaa[0][2] >= minCartThreshold:                #maybe redundant now
+                print(f"BreakDance: {fbt_bt_whaa[0][2]} : {fifooiter}/{minCartThreshold}")
+                break
+            # for fifoskuiter in fbt_bt_whaa[fifooiter][1]:
+
+            fbt_bt_whaa[0][0].append(fbt_bt_whaa[fifooiter][0][0])
+            tottOrdersBatched = fbt_bt_whaa[0][2] + 1   #fbt_bt_whaa[fifooiter][2]
+
+            fbt_temp_prod_list = []
+
+            for fbt_prod in fbt_bt_whaa[0][1]:
+                fbt_temp_prod_list.append(fbt_prod)
+            for fbt_produ in fbt_bt_whaa[fifooiter][1]:
+                fbt_temp_prod_list.append(fbt_produ)
+
+            fbt_bt_whaa[0][1] = copy.deepcopy(fbt_temp_prod_list)  # CHECK DEEPCOPY AND COPY HERE
+            fbt_bt_whaa[0][2] = tottOrdersBatched  # adding to batched index
+
+            if fbt_bt_whaa[0][2]>=minCartThreshold:
+                break
+
+    batched_indices, maxmetricvals, batchedSKUs, num_orders_in_batch, full_batched_order = CalcMaxMetric(bt_whaa, BoxTypeSegregation=box_type_batching, slotting_list=SKU, n_a_p_al=num_aisles_per_alane, minCartThreshold=minCartThreshold)
+
+    if maxmetricvals != "NOBATCH":
     # if CalcMaxPicklines(BT1List, thresh=threshold, BoxTypeSegregation=1) == "NOBATCH":
-        batched_indices, maxmetricvals, batchedSKUs, num_orders_in_batch, full_batched_order = CalcMaxMetric(bt_whaa, BoxTypeSegregation=box_type_batching, slotting_list=SKU, n_a_p_al=num_aisles_per_alane, minCartThreshold=minCartThreshold)
+    #     batched_indices, maxmetricvals, batchedSKUs, num_orders_in_batch, full_batched_order = CalcMaxMetric(bt_whaa, BoxTypeSegregation=box_type_batching, slotting_list=SKU, n_a_p_al=num_aisles_per_alane, minCartThreshold=minCartThreshold)
         # print(f"PRINTED: ")
         assert num_orders_in_batch == minCartThreshold, f"Error! Batch ({num_orders_in_batch}) not exact but still out of loop?"
         print(f"Order sub-batched in Box Type {box_type_batching}")
-        return full_batched_order
+
+        if FIFOBTYPE:
+            print(f"BatchSize: {fbt_bt_whaa[0][2]}, {len(fbt_bt_whaa[0][0])}")
+            assert fbt_bt_whaa[0][2] == minCartThreshold, f"Error! Batch ({fbt_bt_whaa[0][2]}) not exact ({minCartThreshold}) but still out of loop?"
+            return full_batched_order, fbt_bt_whaa[0]
+        else:
+            return full_batched_order
 
 
         # print("\n")
